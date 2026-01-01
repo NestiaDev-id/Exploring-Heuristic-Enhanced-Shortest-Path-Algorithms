@@ -1,12 +1,12 @@
-import React, { useState, useCallback } from 'react';
-import Map from './Map';
-import MapControls from './MapControls';
-import LocationSearch from './LocationSearch';
-import PathInfo from './PathInfo';
-import DemoPanel from './DemoPanel';
-import AppInfo from './AppInfo';
-import { config } from '../config/environment';
-import { logApiCall, logApiResponse, errorLog } from '../utils/logger';
+import React, { useState, useCallback } from "react";
+import Map from "./Map";
+import MapControls from "./MapControls";
+import LocationSearch from "./LocationSearch";
+import PathInfo from "./PathInfo";
+import DemoPanel from "./DemoPanel";
+import AppInfo from "./AppInfo";
+import { config } from "../config/environment";
+import { logApiCall, logApiResponse, errorLog } from "../utils/logger";
 
 interface MarkerData {
   lat: number;
@@ -25,28 +25,34 @@ interface PathResult {
 const ShortestPathApp: React.FC = () => {
   const [markers, setMarkers] = useState<MarkerData[]>([]);
   const [route, setRoute] = useState<Array<[number, number]>>([]);
-  const [selectedAlgorithm, setSelectedAlgorithm] = useState('dijkstra');
+  const [selectedAlgorithm, setSelectedAlgorithm] = useState("dijkstra");
   const [isLoading, setIsLoading] = useState(false);
   const [pathResult, setPathResult] = useState<PathResult | null>(null);
   const [isAddingMarker, setIsAddingMarker] = useState(false);
 
-  const addMarker = useCallback((lat: number, lng: number, label?: string) => {
-    const newMarker: MarkerData = {
-      lat,
-      lng,
-      label: label || `Marker ${markers.length + 1}`
-    };
-    setMarkers(prev => [...prev, newMarker]);
-  }, [markers.length]);
+  const addMarker = useCallback(
+    (lat: number, lng: number, label?: string) => {
+      const newMarker: MarkerData = {
+        lat,
+        lng,
+        label: label || `Marker ${markers.length + 1}`,
+      };
+      setMarkers((prev) => [...prev, newMarker]);
+    },
+    [markers.length]
+  );
 
-  const removeMarker = useCallback((index: number) => {
-    setMarkers(prev => prev.filter((_, i) => i !== index));
-    // Clear route if markers are removed
-    if (route.length > 0) {
-      setRoute([]);
-      setPathResult(null);
-    }
-  }, [route.length]);
+  const removeMarker = useCallback(
+    (index: number) => {
+      setMarkers((prev) => prev.filter((_, i) => i !== index));
+      // Clear route if markers are removed
+      if (route.length > 0) {
+        setRoute([]);
+        setPathResult(null);
+      }
+    },
+    [route.length]
+  );
 
   const clearAllMarkers = useCallback(() => {
     setMarkers([]);
@@ -54,22 +60,31 @@ const ShortestPathApp: React.FC = () => {
     setPathResult(null);
   }, []);
 
-  const addMultipleMarkers = useCallback((newMarkers: Array<{ lat: number; lng: number; label?: string }>) => {
-    setMarkers(newMarkers);
-    // Clear existing route when adding new markers
-    setRoute([]);
-    setPathResult(null);
-  }, []);
+  const addMultipleMarkers = useCallback(
+    (newMarkers: Array<{ lat: number; lng: number; label?: string }>) => {
+      setMarkers(newMarkers);
+      // Clear existing route when adding new markers
+      setRoute([]);
+      setPathResult(null);
+    },
+    []
+  );
 
-  const handleLocationSelect = useCallback((lat: number, lng: number, address: string) => {
-    // Center map on selected location
-    // This would require map ref, but for now just add as marker
-    addMarker(lat, lng, address);
-  }, [addMarker]);
+  const handleLocationSelect = useCallback(
+    (lat: number, lng: number, address: string) => {
+      // Center map on selected location
+      // This would require map ref, but for now just add as marker
+      addMarker(lat, lng, address);
+    },
+    [addMarker]
+  );
 
-  const handleAddToMap = useCallback((lat: number, lng: number, address: string) => {
-    addMarker(lat, lng, address);
-  }, [addMarker]);
+  const handleAddToMap = useCallback(
+    (lat: number, lng: number, address: string) => {
+      addMarker(lat, lng, address);
+    },
+    [addMarker]
+  );
 
   const findShortestPath = useCallback(async () => {
     if (markers.length < 2) return;
@@ -82,35 +97,42 @@ const ShortestPathApp: React.FC = () => {
       // Prepare request data
       const requestData = {
         start: { lat: markers[0].lat, lng: markers[0].lng },
-        end: { lat: markers[markers.length - 1].lat, lng: markers[markers.length - 1].lng },
+        end: {
+          lat: markers[markers.length - 1].lat,
+          lng: markers[markers.length - 1].lng,
+        },
         algorithm: selectedAlgorithm,
-        waypoints: markers.slice(1, -1).map(m => ({ lat: m.lat, lng: m.lng }))
+        waypoints: markers
+          .slice(1, -1)
+          .map((m) => ({ lat: m.lat, lng: m.lng })),
       };
 
       // Call backend API
       const url = `${config.api.baseUrl}${config.api.endpoints.path}`;
-      logApiCall(url, 'POST', requestData);
-      
+      logApiCall(url, "POST", requestData);
+
       const response = await fetch(url, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(requestData),
       });
 
       logApiResponse(url, response.status);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
-      
+
       // Convert path to format expected by map
-      const pathCoords: Array<[number, number]> = result.path?.map((point: any) => 
-        [point.lat || point[0], point.lng || point[1]]
-      ) || [];
+      const pathCoords: Array<[number, number]> =
+        result.path?.map((point: any) => [
+          point.lat || point[0],
+          point.lng || point[1],
+        ]) || [];
 
       setRoute(pathCoords);
       setPathResult({
@@ -118,12 +140,13 @@ const ShortestPathApp: React.FC = () => {
         distance: result.distance,
         duration: result.duration,
         nodesVisited: result.nodes_visited,
-        executionTime: result.execution_time
+        executionTime: result.execution_time,
       });
-
     } catch (error) {
-      errorLog('Error finding path:', error);
-      alert('Error finding path. Please check if the backend server is running.');
+      errorLog("Error finding path:", error);
+      alert(
+        "Error finding path. Please check if the backend server is running."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -133,17 +156,20 @@ const ShortestPathApp: React.FC = () => {
     setIsAddingMarker(true);
   }, []);
 
-  const handleMarkerAdd = useCallback((lat: number, lng: number) => {
-    addMarker(lat, lng);
-    setIsAddingMarker(false);
-  }, [addMarker]);
+  const handleMarkerAdd = useCallback(
+    (lat: number, lng: number) => {
+      addMarker(lat, lng);
+      setIsAddingMarker(false);
+    },
+    [addMarker]
+  );
 
   return (
     <div className="shortest-path-app">
-      <header className="app-header">
+      {/* <header className="app-header">
         <h1>🗺️ Shortest Path Finder</h1>
         <p>Find optimal routes using different pathfinding algorithms</p>
-      </header>
+      </header> */}
 
       <div className="app-content">
         <div className="sidebar">
@@ -151,12 +177,12 @@ const ShortestPathApp: React.FC = () => {
             onLocationSelect={handleLocationSelect}
             onAddToMap={handleAddToMap}
           />
-          
+
           <DemoPanel
             onAddMarkers={addMultipleMarkers}
             onClearMarkers={clearAllMarkers}
           />
-          
+
           <MapControls
             onAddMarker={handleAddMarkerClick}
             onClearMarkers={clearAllMarkers}
@@ -187,7 +213,11 @@ const ShortestPathApp: React.FC = () => {
             route={route}
             onMarkerAdd={isAddingMarker ? handleMarkerAdd : undefined}
             onMarkerRemove={removeMarker}
-            center={markers.length > 0 ? [markers[0].lat, markers[0].lng] : [config.map.defaultCenter.lat, config.map.defaultCenter.lng]}
+            center={
+              markers.length > 0
+                ? [markers[0].lat, markers[0].lng]
+                : [config.map.defaultCenter.lat, config.map.defaultCenter.lng]
+            }
             zoom={markers.length > 0 ? 15 : config.map.defaultZoom}
           />
         </div>
