@@ -13,7 +13,7 @@ class PathRequest(BaseModel):
     algorithm: str = "dijkstra"  # "dijkstra" atau "astar"
     waypoints: Optional[List[Coordinate]] = None
     heuristic: Optional[str] = "euclidean"  # "euclidean" atau "manhattan" (untuk A*)
-
+    mode: str = "osrm"  # "graph" | "osrm"
 
 class PathPoint(BaseModel):
     lat: float

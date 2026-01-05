@@ -20,12 +20,8 @@ app.add_middleware(
 # Include router
 app.include_router(router, prefix="/api", tags=["api"])
 
-
 @app.get("/")
 async def root():
-    """
-    Root endpoint.
-    """
     return {
         "message": "Heuristic Shortest Path API",
         "version": "1.0.0",

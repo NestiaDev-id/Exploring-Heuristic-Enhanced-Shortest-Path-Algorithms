@@ -6,6 +6,7 @@ from ..algorithms.astar import astar
 from ..algorithms.dijkstra import dijkstra
 from ..utils.parser import create_graph_from_coordinates
 from ..graph.graph import Graph
+from  .osrm import get_osrm_route 
 
 router = APIRouter()
 
@@ -25,6 +26,22 @@ async def find_path(request: PathRequest):
     start_time = time.time()
     
     try:
+        if request.mode == "osrm":
+            path_coordinates = get_osrm_route(
+                request.start,
+                request.end
+            )
+
+            execution_time = (time.time() - start_time) * 1000
+
+            return PathResponse(
+                path=path_coordinates,
+                distance=len(path_coordinates) * 10,   # estimasi
+                duration=len(path_coordinates) * 0.5,
+                nodes_visited=len(path_coordinates),
+                execution_time=execution_time
+            )
+
         # Validasi algoritma
         if request.algorithm not in ["dijkstra", "astar"]:
             raise HTTPException(
@@ -92,6 +109,7 @@ async def find_path(request: PathRequest):
                 # Hapus node pertama dari segment_path karena sudah ada di total_path
                 segment_path = segment_path[1:]
             
+            
             total_path.extend(segment_path)
             total_distance += segment_distance
         
@@ -122,4 +140,5 @@ async def find_path(request: PathRequest):
             status_code=500,
             detail=f"Error saat mencari jalur: {str(e)}"
         )
+
 
